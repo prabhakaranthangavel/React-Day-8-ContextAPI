@@ -1,0 +1,348 @@
+Contents:
+
+1.props drilling with examples
+
+2.Context-API
+
+3.What is context, provide, createContext
+
+4.Session task – profile name changes
+
+*************************************************************************************************************************
+
+1.props drilling with examples
+
+
+App.jsx:
+import React, { useState } from 'react'
+import Child from './components/Child';
+
+
+function App() {
+
+  const [message, setMessage] = useState("Hello");
+
+  return (
+    <div>
+      <h1>WElcome To Parent Component</h1>
+      <hr></hr>
+      <Child message= {message}/> 
+    </div>
+  )
+}
+
+export default App
+
+
+Child.jsx:
+import React from 'react'
+import GrandChild from './components/GrandChild';
+
+function Child( {message} ) {
+  return (
+    <div>
+        <h1>WElcome To Child Component</h1>
+        <p>Message from Parent Child To : {message} </p>
+        <hr></hr>
+        <GrandChild message= {message}/>
+    </div>
+  )
+}
+
+export default Child
+
+
+
+GrandChild.jsx:
+import React from 'react'
+
+function GrandChild(  {message} ) {
+  return (
+    <div>
+        <h1>Welcome To GrandChild Component</h1>
+        <p>Message from Child To : {message}</p>
+    </div>
+  )
+}
+
+export default GrandChild
+
+
+
+Following the steps
+
+step 1 : App.jsx => <h1>WElcome To Parent Component</h1>
+
+                 => set the State =>const[message,setMessage] = useState("Hello");
+
+                 => Created ChildComponent =><ChildComponent />
+
+                 => So import the Child என்ற Component => import Child from './components/Child';
+
+
+step 2 : Child.jsx => <h1>WElcome To Child Component</h1>
+                   => <p>Message from Parent Child To : </p>
+                   => <GrandChild />
+
+                   => parent ல் இருந்து child க்கு data வருவதால் நம்முடைய புரிதலுக்காக <p>...</p>இவ்வாறு கொடுத்துள்ளோம்.
+                   => ஆனால் உண்மையில் GrandChild என்ற Component க்கு தான் data ஐ செலுத்துகிறோம்.
+                   => ஆனால் அவ்வாறு நேரடியாக செலுத்த முடியாது.
+                   => அதனால் parent ல் இருந்து Child என்ற Component க்கு data ஐ அனுப்பி அங்கிருந்து மீண்டும் GrandChild என்ற Component க்கு data ஐ அனுப்புகிறோம்.
+                   => இவ்வாறு nested Component அல்லது Jump to Jump Component ஆக செல்வதை props drilling என்கிறோம்.
+                   => Actually  parent to grandchild data is passing.
+                   => Summary :
+                   => parent => child => child1 => child2 => grandchild
+                   => parent => data  => data   => data   => received data
+
+
+step 3 :           => Created GrandChildComponent =><GrandChildComponent />
+
+                   => So import the GrandChild என்ற Component => import Child from './components/GrandChild';
+
+
+step 4 : GrandChildComponent => <h1>WElcome To GrandChild Component</h1>
+                             => <p>Message from Parent Child To : </p>
+
+
+step 5 : Set the props
+App.jsx         => <Child message= {message}/>
+
+Child.jsx       => function Child( {message} )
+
+                   <p>Message from Parent Child To : {message} </p>
+        
+                   <GrandChild message= {message}/>
+
+GrandChild.jsx  => function GrandChild(  {message} ) 
+                => <p>Message from Child To : {message}</p>
+
+
+
+output:
+Kindly console the output.
+
+*************************************************************************************************************************
+
+2.Context-API
+
+what is Context-API ?
+
+===>It is to manage and share the states across the nested components or component tree without need to pass the props data down through multiple levels of the nested components.
+
+
+
+parent component 
+App.jsx
+
+createContext : 
+===>Context ஐ create செய்ய வேண்டும்.
+===>function App() க்கு வெளியே அல்லது மேலே கொடுக்க வேண்டும்.
+
+const MessageContext = createContext();
+
+ 
+provideContext : 
+===>MessageContext.Provider க்குள் கொடுக்க வேண்டும்.
+===>அதனுடன் value ஐ set செய்ய வேண்டும்.
+
+      <MessageContext.Provider value= {{message,coins}}>
+      <Child /> 
+      </MessageContext.Provider>
+
+
+exportContext : 
+===>export செய்ய வேண்டும்.
+
+export {App as default,MessageContext}
+
+
+Child.jsx and GrandChild.jsx 
+
+===>props க்கு பதிலாக useContext என்ற hook ஐ add செய்கிறோம்.
+const {message,coins} = useContext(MessageContext)
+
+
+===>MessageContext.Consumer ஐ add செய்கிறோம்.
+
+<MessageContext.Consumer>
+      {
+    <div>
+        <h1>Welcome To Child Component</h1>
+        <p>Message from Parent Child To : {message} </p>
+        <hr></hr>
+        <GrandChild />
+    </div>
+     }
+
+</MessageContext.Consumer>
+
+
+
+===>Program:
+
+App.jsx:
+import React, { createContext, useState } from 'react'
+import ChildComponent from './components/ChildComponent';
+
+
+// cerate a context
+const MessageContext = createContext();
+
+function App() {
+
+  const [message,setMessage] = useState("Hello");
+  const [coins,setCoins]     = useState([1,2,3,4,5]);
+
+  return (
+    <div>
+      <h1>Parent Component</h1>
+      <hr></hr>
+      <MessageContext.Provider value = {{ message , coins }} >
+        <ChildComponent />
+      </MessageContext.Provider>
+    </div>
+    
+  )
+}
+
+export { App as default, MessageContext};
+
+
+
+ChildComponent.jsx:
+import React from 'react'
+import GrandChildComponent from './GrandChildComponent'
+import { MessageContext } from '../App'
+
+function ChildComponent() {
+
+    // const {message,coins} = useContext(MessageContext);
+
+  return (
+    <MessageContext.Consumer>
+        { (data) => (
+    <div>
+        <h2>Child Component</h2>
+        <p>Message from Parent : {data.message}</p>
+        <hr></hr>
+        <GrandChildComponent  />
+    </div>
+  )
+}
+</MessageContext.Consumer>
+  )
+}
+export default ChildComponent
+
+
+
+GrandChildComponent.jsx:
+import React from 'react'
+
+function GrandChildComponent() {
+
+    const {message,coins} = useContext(MessageContext);
+
+
+    const coinsSum = () => {
+        return coins.reduce((prev , curr) => prev + curr , 0 );
+    }
+
+  return (
+    <div>
+        <h1>Grand Child Component</h1>
+        <p>Message from Child Component : { message }</p>
+        <p>Remaining Coins : {coinsSum()}</p>
+    </div>
+  )
+}
+
+export default GrandChildComponent
+
+
+
+output not show: pls refer
+
+*************************************************************************************************************************
+
+4.Session task – profile name changes
+
+    Implement a React component that allows users to change their profile name using the context api.
+        - the component should consist of two parts: a component called App and 
+        - a child component called Profile.
+    
+    The App component should be:
+        - Import necessary dependencies
+        - Create a context object using the createContext function from React.
+        - Define a state variable called profileName using the useState hook and set its initial alue to an empty string.
+        - Wrap the Profile component with the context provider component, passing the profileName state and its corresponding setter function as the value prop.
+    
+    The Profile component should:
+        - Use the useContext hook to access the profileName state variable and its setter function from the context .
+        - Render an input field where users can enter their profile name, with its value set to the profileName state variable.
+        - Add an onChange event handler to the input field that updates the profileName state variable with the entered value using the setter function.
+        - make sure to export the App as the default import and the created context in the App component.
+
+
+App.jsx:
+import React, { createContext, useState } from 'react';
+import Profile from './components/Profile';
+
+// Create a context object using the createContext function from React
+const ProfileContext = createContext();
+
+// Define a state variable called profileName using the useState hook and set its initial alue to an empty string.
+function App() {
+    const [profileName, setProfileName] = useState('');
+  return (
+      <div>
+          {/* Wrap the Profile component with the context provider component */}
+          {/* passing the profileName state and its corresponding setter function as the value prop.*/}
+          <ProfileContext.Provider value={{ profileName, setProfileName }}>
+              <Profile />
+          </ProfileContext.Provider>
+    </div>
+  )
+}
+
+export {App as default, ProfileContext};
+
+
+
+Profile.jsx:
+import React, { useContext } from 'react'
+import { ProfileContext } from '../App';
+
+
+    // Use the useContext hook to access the profileName state variable and its setter function from the context.
+    function Profile() {
+        const {profileName , setprofileName} = useContext(ProfileContext);
+
+
+    // updates the profileName state variable with the entered value using the setter function.
+    const profileNameHandler = (event) => {
+        console.log(event.target.value);
+        setprofileName(event.target.value);
+    }
+
+
+  return (
+    <div>
+        <h2> Profile Name : {profileName} </h2>
+
+        {/* Render an input field where users can enter their profile name,  */}
+
+        {/* with its value set to the profileName state variable. */}
+
+        {/* Add an onChange event handler to the input field */}
+
+        <input placeholder='Enter Your Profile Name' value = {profileName} onChange={profileNameHandler}
+         />
+
+    </div>
+  )
+}
+
+export default Profile
+
+*************************************************************************************************************************
